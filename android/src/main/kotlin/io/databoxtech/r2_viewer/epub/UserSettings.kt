@@ -13,6 +13,7 @@ package io.databoxtech.r2_viewer.epub
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -39,7 +40,7 @@ class UserSettings(var preferences: SharedPreferences, val context: Context, pri
     private val textAlignmentValues = listOf("justify", "start")
     private val columnCountValues = listOf("auto", "1", "2")
 
-    private var fontSize = 100f
+    private var fontSize = 110f
     private var fontOverride = false
     private var fontFamily = 0
     private var appearance = 0
@@ -52,7 +53,7 @@ class UserSettings(var preferences: SharedPreferences, val context: Context, pri
     private var wordSpacing = 0f
     private var letterSpacing = 0f
     private var pageMargins = 2f
-    private var lineHeight = 1f
+    private var lineHeight = 1.5f
 
     private var userProperties: UserProperties
 
@@ -76,7 +77,15 @@ class UserSettings(var preferences: SharedPreferences, val context: Context, pri
         userProperties = getUserSettings()
 
         //Setting up screen brightness
-        val backLightValue = preferences.getInt("reader_brightness", 50).toFloat() / 100
+        var brightness = preferences.getInt("reader_brightness", 0)
+        if(brightness == 0){
+            brightness =
+                Settings.System.getInt(
+                    context.contentResolver,
+                    Settings.System.SCREEN_BRIGHTNESS);
+        }
+        val backLightValue = brightness.toFloat() / 100;
+
         val layoutParams = (context as AppCompatActivity).window.attributes
         layoutParams.screenBrightness = backLightValue
         context.window.attributes = layoutParams
@@ -100,7 +109,7 @@ class UserSettings(var preferences: SharedPreferences, val context: Context, pri
         // Font family
         userProperties.addEnumerable(fontFamily, fontFamilyValues, FONT_FAMILY_REF, FONT_FAMILY_NAME)
         // Font size
-        userProperties.addIncremental(fontSize, 100f, 300f, 25f, "%", FONT_SIZE_REF, FONT_SIZE_NAME)
+        userProperties.addIncremental(fontSize, 80f, 300f, 10f, "%", FONT_SIZE_REF, FONT_SIZE_NAME)
         // Line height
         userProperties.addIncremental(lineHeight, 1f, 2f, 0.25f, "", LINE_HEIGHT_REF, LINE_HEIGHT_NAME)
         // Word spacing

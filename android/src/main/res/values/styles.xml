@@ -32,4 +32,9 @@
         <item name="android:textAlignment">center</item>
     </style>
 
+    <style name="TabText">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
 </resources>

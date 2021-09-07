@@ -35,7 +35,13 @@ class R2ViewerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
     if (call.method == "openEpub") {
       val intent = Intent(this.context, MainActivity::class.java)
-      intent.putExtra("epub", "https://dev.databoxtech.com/test.epub")
+      intent.putExtra("bookPath", call.argument<String>("bookPath"))
+      val bookId = call.argument<Int>("bookId")
+      if (bookId != null) {
+        intent.putExtra("bookId", bookId.toLong())
+      }else{
+        intent.putExtra("bookId", 0L)
+      }
       this.activity.startActivity(intent)
     } else {
       result.notImplemented()

@@ -103,6 +103,7 @@
                     </LinearLayout>
 
                     <LinearLayout
+                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
@@ -180,6 +181,7 @@
                     <Switch
                         android:id="@+id/scroll_mode"
                         android:layout_width="match_parent"
+                        android:visibility="gone"
                         android:layout_height="48dp"
                         android:text="@string/usersettings_label_scroll_mode"
                         android:textSize="16sp"/>
@@ -275,6 +277,7 @@
                     </RadioGroup>
 
                     <LinearLayout
+                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"

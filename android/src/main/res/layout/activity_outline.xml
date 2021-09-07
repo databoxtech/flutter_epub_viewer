@@ -31,6 +31,7 @@
 
                 <TabWidget
                     android:id="@android:id/tabs"
+                    style="@style/TabText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </HorizontalScrollView>

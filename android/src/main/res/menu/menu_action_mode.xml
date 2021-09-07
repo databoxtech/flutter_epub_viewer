@@ -13,6 +13,7 @@
     <item
         android:id="@+id/note"
         android:title="Note"
+        android:visible="false"
         app:showAsAction="always">
     </item>
 

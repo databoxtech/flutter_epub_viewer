@@ -14,6 +14,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -32,18 +33,17 @@ import org.readium.r2.shared.extensions.getPublication
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
-import org.readium.r2.shared.publication.epub.landmarks
-import org.readium.r2.shared.publication.epub.pageList
 import org.readium.r2.shared.publication.opds.images
+import org.readium.r2.testapp.db.*
 import kotlin.math.roundToInt
 
 
 class R2OutlineActivity : AppCompatActivity() {
 
     private lateinit var preferences:SharedPreferences
-//    private lateinit var bookmarkDB: BookmarksDatabase
-//    private lateinit var highlightsDB: HighligtsDatabase
-//    private lateinit var positionsDB: PositionsDatabase
+    private lateinit var bookmarkDB: BookmarksDatabase
+    private lateinit var highlightsDB: HighligtsDatabase
+    private lateinit var positionsDB: PositionsDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -114,78 +114,78 @@ class R2OutlineActivity : AppCompatActivity() {
         /*
          * Retrieve the list of bookmarks
          */
-//        bookmarkDB = BookmarksDatabase(this)
+        bookmarkDB = BookmarksDatabase(this)
 
         val bookID = intent.getLongExtra("bookId", -1)
-//        val bookmarks = bookmarkDB.bookmarks.list(bookID).sortedWith(compareBy({it.resourceIndex},{ it.location.progression })).toMutableList()
-//
-//        val bookmarksAdapter = BookMarksAdapter(this, bookmarks, publication)
-//
-//        bookmark_list.adapter = bookmarksAdapter
+        val bookmarks = bookmarkDB.bookmarks.list(bookID).sortedWith(compareBy({it.resourceIndex},{ it.location.progression })).toMutableList()
+
+        val bookmarksAdapter = BookMarksAdapter(this, bookmarks, publication)
+
+        bookmark_list.adapter = bookmarksAdapter
 
 
-//        bookmark_list.setOnItemClickListener { _, _, position, _ ->
-//
-//            //Link to the resource in the publication
-//            val bookmark = bookmarks[position]
-//            val resourceHref = bookmark.resourceHref
-//            val resourceType = bookmark.resourceType
-//
-//            //Progression of the selected bookmark
-//            val bookmarkProgression = bookmarks[position].location.progression
-//
-//            val intent = Intent()
-//            intent.putExtra("locator", Locator(resourceHref, resourceType, publication.metadata.title, Locator.Locations(progression = bookmarkProgression)))
-//            setResult(Activity.RESULT_OK, intent)
-//            finish()
-//        }
-//
-//
-//        highlightsDB = HighligtsDatabase(this)
-//
-//        val highlights = highlightsDB.highlights.listAll(bookID).sortedWith(compareBy({it.resourceIndex},{ it.location.progression })).toMutableList()
-//        val highlightsAdapter = HighlightsAdapter(this, highlights, publication)
-//        highlight_list.adapter = highlightsAdapter
-//        highlight_list.setOnItemClickListener { _, _, position, _ ->
-//            //Link to the resource in the publication
-//            val highlight = highlights[position]
-//            val resourceHref = highlight.resourceHref
-//            val resourceType = highlight.resourceType
-//            //Progression of the selected bookmark
-//            val highlightProgression = highlights[position].location.progression
-//            val intent = Intent()
-//            intent.putExtra("locator", Locator(resourceHref, resourceType, publication.metadata.title, Locator.Locations(progression = highlightProgression)))
-//            setResult(Activity.RESULT_OK, intent)
-//            finish()
-//
-//        }
-//
-//        /*
-//         * Retrieve the page list
-//         */
+        bookmark_list.setOnItemClickListener { _, _, position, _ ->
+
+            //Link to the resource in the publication
+            val bookmark = bookmarks[position]
+            val resourceHref = bookmark.resourceHref
+            val resourceType = bookmark.resourceType
+
+            //Progression of the selected bookmark
+            val bookmarkProgression = bookmarks[position].location.progression
+
+            val intent = Intent()
+            intent.putExtra("locator", Locator(resourceHref, resourceType, publication.metadata.title, Locator.Locations(progression = bookmarkProgression)))
+            setResult(Activity.RESULT_OK, intent)
+            finish()
+        }
+
+
+        highlightsDB = HighligtsDatabase(this)
+
+        val highlights = highlightsDB.highlights.listAll(bookID).sortedWith(compareBy({it.resourceIndex},{ it.location.progression })).toMutableList()
+        val highlightsAdapter = HighlightsAdapter(this, highlights, publication)
+        highlight_list.adapter = highlightsAdapter
+        highlight_list.setOnItemClickListener { _, _, position, _ ->
+            //Link to the resource in the publication
+            val highlight = highlights[position]
+            val resourceHref = highlight.resourceHref
+            val resourceType = highlight.resourceType
+            //Progression of the selected bookmark
+            val highlightProgression = highlights[position].location.progression
+            val intent = Intent()
+            intent.putExtra("locator", Locator(resourceHref, resourceType, publication.metadata.title, Locator.Locations(progression = highlightProgression)))
+            setResult(Activity.RESULT_OK, intent)
+            finish()
+
+        }
+
+        /*
+         * Retrieve the page list
+         */
 //        positionsDB = PositionsDatabase(this)
-
-        val pageList = publication.pageList
-
-        if (pageList.isNotEmpty()) {
-            val pageListAdapter = NavigationAdapter(this, pageList.toMutableList())
-            page_list.adapter = pageListAdapter
-
-            page_list.setOnItemClickListener { _, _, position, _ ->
-
-                //Link to the resource in the publication
-                val link = pageList[position]
-                val resourceHref = link.href
-                val resourceType = link.type ?: ""
-
-
-                val intent = Intent()
-                intent.putExtra("locator", Locator(resourceHref, resourceType, publication.metadata.title, Locator.Locations(progression = 0.0)))
-                setResult(Activity.RESULT_OK, intent)
-                finish()
-
-            }
-        } else {
+//
+//        val pageList = publication.pageList
+//
+//        if (pageList.isNotEmpty()) {
+//            val pageListAdapter = NavigationAdapter(this, pageList.toMutableList())
+//            page_list.adapter = pageListAdapter
+//
+//            page_list.setOnItemClickListener { _, _, position, _ ->
+//
+//                //Link to the resource in the publication
+//                val link = pageList[position]
+//                val resourceHref = link.href
+//                val resourceType = link.type ?: ""
+//
+//
+//                val intent = Intent()
+//                intent.putExtra("locator", Locator(resourceHref, resourceType, publication.metadata.title, Locator.Locations(progression = 0.0)))
+//                setResult(Activity.RESULT_OK, intent)
+//                finish()
+//
+//            }
+//        } else {
 //            if (positionsDB.positions.has(bookID)) {
 //                val jsonPageList = positionsDB.positions.getSyntheticPageList(bookID)
 //
@@ -210,30 +210,31 @@ class R2OutlineActivity : AppCompatActivity() {
 //                    finish()
 //                }
 //            }
-        }
-
-
-        /*
-         * Retrieve the landmarks
-         */
-        val landmarks = publication.landmarks
-
-        val landmarksAdapter = NavigationAdapter(this, landmarks.toMutableList())
-        landmarks_list.adapter = landmarksAdapter
-
-        landmarks_list.setOnItemClickListener { _, _, position, _ ->
-
-            //Link to the resource in the publication
-            val link = landmarks[position]
-            val resourceHref = link.href
-            val resourceType = link.type ?: ""
-
-            val intent = Intent()
-            intent.putExtra("locator", Locator(resourceHref, resourceType, publication.metadata.title, Locator.Locations(progression = 0.0)))
-            setResult(Activity.RESULT_OK, intent)
-            finish()
-
-        }
+//        }
+//
+//
+//        /*
+//         * Retrieve the landmarks
+//         */
+//        val landmarks = publication.landmarks
+//
+//        val landmarksAdapter = NavigationAdapter(this, landmarks.toMutableList())
+//        landmarks_list.adapter = landmarksAdapter
+//
+//        landmarks_list.setOnItemClickListener { _, _, position, _ ->
+//
+//            //Link to the resource in the publication
+//            val link = landmarks[position]
+//            val resourceHref = link.href
+//            val resourceType = link.type ?: ""
+//
+//            val intent = Intent()
+//            intent.putExtra("locator", Locator(resourceHref, resourceType, publication.metadata.title, Locator.Locations(progression = 0.0)))
+//            setResult(Activity.RESULT_OK, intent)
+//            finish()
+//
+//        }
+//        }
 
 
         actionBar?.setDisplayHomeAsUpEnabled(true)
@@ -244,6 +245,7 @@ class R2OutlineActivity : AppCompatActivity() {
         val tabTOC: TabHost.TabSpec = tabHost.newTabSpec("Content")
         tabTOC.setIndicator(tabTOC.tag)
         tabTOC.setContent(R.id.toc_tab)
+//        this.setTitle(tabTOC, getString(R.id.toc_tab))
 
         val tabBookmarks: TabHost.TabSpec = tabHost.newTabSpec("Bookmarks")
         tabBookmarks.setIndicator(tabBookmarks.tag)
@@ -253,14 +255,14 @@ class R2OutlineActivity : AppCompatActivity() {
         tabHighlights.setIndicator(tabHighlights.tag)
         tabHighlights.setContent(R.id.highlights_tab)
 
-        val tabPageList: TabHost.TabSpec = tabHost.newTabSpec("Page List")
-        tabPageList.setIndicator(tabPageList.tag)
-        tabPageList.setContent(R.id.pagelists_tab)
-
-
-        val tabLandmarks: TabHost.TabSpec = tabHost.newTabSpec("Landmarks")
-        tabLandmarks.setIndicator(tabLandmarks.tag)
-        tabLandmarks.setContent(R.id.landmarks_tab)
+//        val tabPageList: TabHost.TabSpec = tabHost.newTabSpec("Page List")
+//        tabPageList.setIndicator(tabPageList.tag)
+//        tabPageList.setContent(R.id.pagelists_tab)
+//
+//
+//        val tabLandmarks: TabHost.TabSpec = tabHost.newTabSpec("Landmarks")
+//        tabLandmarks.setIndicator(tabLandmarks.tag)
+//        tabLandmarks.setContent(R.id.landmarks_tab)
 
 
         when (publication.type) {
@@ -274,10 +276,22 @@ class R2OutlineActivity : AppCompatActivity() {
                 tabHost.addTab(tabTOC)
                 tabHost.addTab(tabBookmarks)
                 tabHost.addTab(tabHighlights)
-                tabHost.addTab(tabPageList)
-                tabHost.addTab(tabLandmarks)
+//                tabHost.addTab(tabPageList)
+//                tabHost.addTab(tabLandmarks)
             }
         }
+
+        for (i in 0 until tabHost.tabWidget.childCount) {
+            tabHost.tabWidget.getChildAt(i)
+                    .setBackgroundColor(Color.parseColor("#FFFFFF")) // unselected
+        }
+    }
+
+    private fun setTitle(tab: TabHost.TabSpec, text: String){
+        val txtView: TextView = TextView(this);
+        txtView.text = text;
+        txtView.setTextColor(resources.getColor(R.color.white))
+        tab.setIndicator(txtView);
     }
 
 
@@ -447,190 +461,190 @@ class R2OutlineActivity : AppCompatActivity() {
     }
 
 
-//    inner class BookMarksAdapter(val activity: Activity, private val items: MutableList<Bookmark>, private val publication: Publication) : BaseAdapter() {
-//
-//        private inner class ViewHolder(row: View?) {
-//            internal var bookmarkChapter: TextView? = null
-//            internal var bookmarkProgression: TextView? = null
-//            internal var bookmarkTimestamp: TextView? = null
-//            internal var bookmarkOverflow: ImageView? = null
-//
-//            init {
-//                this.bookmarkChapter = row?.bookmark_chapter as TextView
-//                this.bookmarkProgression = row.bookmark_progression as TextView
-//                this.bookmarkTimestamp = row.bookmark_timestamp as TextView
-//                this.bookmarkOverflow = row.overflow as ImageView
-//
-//            }
-//        }
-//
-//        override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-//
-//
-//            val view: View?
-//            val viewHolder: ViewHolder
-//            if (convertView == null) {
-//                val inflater = activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-//                view = inflater.inflate(R.layout.item_recycle_bookmark, null)
-//                viewHolder = ViewHolder(view)
-//                view?.tag = viewHolder
-//            } else {
-//                view = convertView
-//                viewHolder = view.tag as ViewHolder
-//            }
-//
-//            val bookmark = getItem(position) as Bookmark
-//
-//            var title = getBookSpineItem(bookmark.resourceHref)
-//            if(title.isNullOrEmpty()){
-//                title = "*Title Missing*"
-//            }
-//            viewHolder.bookmarkChapter!!.text = title
-//
-//            bookmark.location.progression?.let { progression ->
-//                val formattedProgression = "${(progression * 100).roundToInt()}% through resource"
-//                viewHolder.bookmarkProgression!!.text = formattedProgression
-//            }
-//
-//            val formattedDate = DateTime(bookmark.creationDate).toString(DateTimeFormat.shortDateTime())
-//            viewHolder.bookmarkTimestamp!!.text = formattedDate
-//
-//            viewHolder.bookmarkOverflow?.setOnClickListener {
-//
-//                val popupMenu = PopupMenu(parent?.context, viewHolder.bookmarkChapter)
-//                popupMenu.menuInflater.inflate(R.menu.menu_bookmark, popupMenu.menu)
-//                popupMenu.show()
-//
-//                popupMenu.setOnMenuItemClickListener { item ->
-//                    if (item.itemId == R.id.delete) {
-//                        bookmarkDB.bookmarks.delete(items[position])
-//                        items.removeAt(position)
-//                        notifyDataSetChanged()
-//                    }
-//                    false
-//                }
-//            }
-//
-//
-//            return view as View
-//        }
-//
-//        override fun getCount(): Int {
-//            return items.size
-//        }
-//
-//        override fun getItem(position: Int): Any {
-//            return items[position]
-//        }
-//
-//        private fun getBookSpineItem(href: String): String? {
-//            for (link in publication.tableOfContents) {
-//                if (link.href == href) {
-//                    return link.outlineTitle
-//                }
-//            }
-//            for (link in publication.readingOrder) {
-//                if (link.href == href) {
-//                    return link.outlineTitle
-//                }
-//            }
-//            return null
-//        }
-//
-//        override fun getItemId(position: Int): Long {
-//            return position.toLong()
-//        }
-//
-//    }
-//
-//    inner class HighlightsAdapter(val activity: Activity, private val items: MutableList<Highlight>, private val publication: Publication) : BaseAdapter() {
-//
-//        private inner class ViewHolder(row: View?) {
-//            internal var highlightedText: TextView? = null
-//            internal var highlightTimestamp: TextView? = null
-//            internal var highlightChapter: TextView? = null
-//            internal var highlightOverflow: ImageView? = null
-//            internal var annotation: TextView? = null
-//
-//            init {
-//                this.highlightedText = row?.highlight_text as TextView
-//                this.highlightTimestamp = row.highlight_time_stamp as TextView
-//                this.highlightChapter = row.highlight_chapter as TextView
-//                this.highlightOverflow = row.highlight_overflow as ImageView
-//                this.annotation = row.annotation as TextView
-//            }
-//        }
-//
-//        override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-//
-//
-//            val view: View?
-//            val viewHolder: ViewHolder
-//            if (convertView == null) {
-//                val inflater = activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-//                view = inflater.inflate(R.layout.item_recycle_highlight, null)
-//                viewHolder = ViewHolder(view)
-//                view?.tag = viewHolder
-//            } else {
-//                view = convertView
-//                viewHolder = view.tag as ViewHolder
-//            }
-//
-//            val highlight = getItem(position) as Highlight
-//
-//            viewHolder.highlightChapter!!.text = getHighlightSpineItem(highlight.resourceHref)
-//            viewHolder.highlightedText!!.text = highlight.locatorText.highlight
-//            viewHolder.annotation!!.text = highlight.annotation
-//
-//            val formattedDate = DateTime(highlight.creationDate).toString(DateTimeFormat.shortDateTime())
-//            viewHolder.highlightTimestamp!!.text = formattedDate
-//
-//            viewHolder.highlightOverflow?.setOnClickListener {
-//
-//                val popupMenu = PopupMenu(parent?.context, viewHolder.highlightChapter)
-//                popupMenu.menuInflater.inflate(R.menu.menu_bookmark, popupMenu.menu)
-//                popupMenu.show()
-//
-//                popupMenu.setOnMenuItemClickListener { item ->
-//                    if (item.itemId == R.id.delete) {
-//                        highlightsDB.highlights.delete(items[position])
-//                        items.removeAt(position)
-//                        notifyDataSetChanged()
-//                    }
-//                    false
-//                }
-//            }
-//
-//            return view as View
-//        }
-//
-//        override fun getCount(): Int {
-//            return items.size
-//        }
-//
-//        override fun getItem(position: Int): Any {
-//            return items[position]
-//        }
-//
-//        override fun getItemId(position: Int): Long {
-//            return position.toLong()
-//        }
-//
-//        private fun getHighlightSpineItem(href: String): String? {
-//            for (link in publication.tableOfContents) {
-//                if (link.href == href) {
-//                    return link.outlineTitle
-//                }
-//            }
-//            for (link in publication.readingOrder) {
-//                if (link.href == href) {
-//                    return link.outlineTitle
-//                }
-//            }
-//            return null
-//        }
-//
-//    }
+    inner class BookMarksAdapter(val activity: Activity, private val items: MutableList<Bookmark>, private val publication: Publication) : BaseAdapter() {
+
+        private inner class ViewHolder(row: View?) {
+            internal var bookmarkChapter: TextView? = null
+            internal var bookmarkProgression: TextView? = null
+            internal var bookmarkTimestamp: TextView? = null
+            internal var bookmarkOverflow: ImageView? = null
+
+            init {
+                this.bookmarkChapter = row?.bookmark_chapter as TextView
+                this.bookmarkProgression = row.bookmark_progression as TextView
+                this.bookmarkTimestamp = row.bookmark_timestamp as TextView
+                this.bookmarkOverflow = row.overflow as ImageView
+
+            }
+        }
+
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+
+
+            val view: View?
+            val viewHolder: ViewHolder
+            if (convertView == null) {
+                val inflater = activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+                view = inflater.inflate(R.layout.item_recycle_bookmark, null)
+                viewHolder = ViewHolder(view)
+                view?.tag = viewHolder
+            } else {
+                view = convertView
+                viewHolder = view.tag as ViewHolder
+            }
+
+            val bookmark = getItem(position) as Bookmark
+
+            var title = getBookSpineItem(bookmark.resourceHref)
+            if(title.isNullOrEmpty()){
+                title = "*Title Missing*"
+            }
+            viewHolder.bookmarkChapter!!.text = title
+
+            bookmark.location.progression?.let { progression ->
+                val formattedProgression = "${(progression * 100).roundToInt()}% through resource"
+                viewHolder.bookmarkProgression!!.text = formattedProgression
+            }
+
+            val formattedDate = DateTime(bookmark.creationDate).toString(DateTimeFormat.shortDateTime())
+            viewHolder.bookmarkTimestamp!!.text = formattedDate
+
+            viewHolder.bookmarkOverflow?.setOnClickListener {
+
+                val popupMenu = PopupMenu(parent?.context, viewHolder.bookmarkChapter)
+                popupMenu.menuInflater.inflate(R.menu.menu_bookmark, popupMenu.menu)
+                popupMenu.show()
+
+                popupMenu.setOnMenuItemClickListener { item ->
+                    if (item.itemId == R.id.delete) {
+                        bookmarkDB.bookmarks.delete(items[position])
+                        items.removeAt(position)
+                        notifyDataSetChanged()
+                    }
+                    false
+                }
+            }
+
+
+            return view as View
+        }
+
+        override fun getCount(): Int {
+            return items.size
+        }
+
+        override fun getItem(position: Int): Any {
+            return items[position]
+        }
+
+        private fun getBookSpineItem(href: String): String? {
+            for (link in publication.tableOfContents) {
+                if (link.href == href) {
+                    return link.outlineTitle
+                }
+            }
+            for (link in publication.readingOrder) {
+                if (link.href == href) {
+                    return link.outlineTitle
+                }
+            }
+            return null
+        }
+
+        override fun getItemId(position: Int): Long {
+            return position.toLong()
+        }
+
+    }
+
+    inner class HighlightsAdapter(val activity: Activity, private val items: MutableList<Highlight>, private val publication: Publication) : BaseAdapter() {
+
+        private inner class ViewHolder(row: View?) {
+            internal var highlightedText: TextView? = null
+            internal var highlightTimestamp: TextView? = null
+            internal var highlightChapter: TextView? = null
+            internal var highlightOverflow: ImageView? = null
+            internal var annotation: TextView? = null
+
+            init {
+                this.highlightedText = row?.highlight_text as TextView
+                this.highlightTimestamp = row.highlight_time_stamp as TextView
+                this.highlightChapter = row.highlight_chapter as TextView
+                this.highlightOverflow = row.highlight_overflow as ImageView
+                this.annotation = row.annotation as TextView
+            }
+        }
+
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+
+
+            val view: View?
+            val viewHolder: ViewHolder
+            if (convertView == null) {
+                val inflater = activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+                view = inflater.inflate(R.layout.item_recycle_highlight, null)
+                viewHolder = ViewHolder(view)
+                view?.tag = viewHolder
+            } else {
+                view = convertView
+                viewHolder = view.tag as ViewHolder
+            }
+
+            val highlight = getItem(position) as Highlight
+
+            viewHolder.highlightChapter!!.text = getHighlightSpineItem(highlight.resourceHref)
+            viewHolder.highlightedText!!.text = highlight.locatorText.highlight
+            viewHolder.annotation!!.text = highlight.annotation
+
+            val formattedDate = DateTime(highlight.creationDate).toString(DateTimeFormat.shortDateTime())
+            viewHolder.highlightTimestamp!!.text = formattedDate
+
+            viewHolder.highlightOverflow?.setOnClickListener {
+
+                val popupMenu = PopupMenu(parent?.context, viewHolder.highlightChapter)
+                popupMenu.menuInflater.inflate(R.menu.menu_bookmark, popupMenu.menu)
+                popupMenu.show()
+
+                popupMenu.setOnMenuItemClickListener { item ->
+                    if (item.itemId == R.id.delete) {
+                        highlightsDB.highlights.delete(items[position])
+                        items.removeAt(position)
+                        notifyDataSetChanged()
+                    }
+                    false
+                }
+            }
+
+            return view as View
+        }
+
+        override fun getCount(): Int {
+            return items.size
+        }
+
+        override fun getItem(position: Int): Any {
+            return items[position]
+        }
+
+        override fun getItemId(position: Int): Long {
+            return position.toLong()
+        }
+
+        private fun getHighlightSpineItem(href: String): String? {
+            for (link in publication.tableOfContents) {
+                if (link.href == href) {
+                    return link.outlineTitle
+                }
+            }
+            for (link in publication.readingOrder) {
+                if (link.href == href) {
+                    return link.outlineTitle
+                }
+            }
+            return null
+        }
+
+    }
 
 }
 

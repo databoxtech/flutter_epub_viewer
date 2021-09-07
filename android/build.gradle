@@ -46,6 +46,7 @@ android {
 dependencies {
     final READIUM_VERSION = '2.0.0-beta.1'
     final ACTIVITY_VERSION = '1.2.0-rc01'
+    final KOVENANT_VERSION = '3.3.0'
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2"
@@ -66,11 +67,20 @@ dependencies {
 
     implementation "androidx.activity:activity-ktx:$ACTIVITY_VERSION"
 
+    implementation "nl.komponents.kovenant:kovenant:$KOVENANT_VERSION"
+    implementation "nl.komponents.kovenant:kovenant-android:$KOVENANT_VERSION"
+    implementation "nl.komponents.kovenant:kovenant-combine:$KOVENANT_VERSION"
+    implementation "nl.komponents.kovenant:kovenant-core:$KOVENANT_VERSION"
+    implementation "nl.komponents.kovenant:kovenant-functional:$KOVENANT_VERSION"
+    implementation "nl.komponents.kovenant:kovenant-jvm:$KOVENANT_VERSION"
+
     implementation "com.google.code.gson:gson:2.8.6"
     implementation "com.jakewharton.timber:timber:4.7.1"
     implementation "org.jsoup:jsoup:1.10.3"
     implementation "org.slf4j:slf4j-nop:1.7.30"
     implementation "joda-time:joda-time:2.10.5"
+
+    implementation "org.jetbrains.anko:anko-sqlite:0.10.8"
 
     implementation ("com.github.edrlab.nanohttpd:nanohttpd:master-SNAPSHOT") {
         exclude group: 'org.parboiled'

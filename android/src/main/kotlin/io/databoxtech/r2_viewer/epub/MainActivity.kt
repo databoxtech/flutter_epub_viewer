@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
@@ -79,11 +80,13 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 //        properties.load(inputStream)
         val useExternalFileDir = true //properties.getProperty("useExternalFileDir", "false")!!.toBoolean()
 
-        R2DIRECTORY = if (useExternalFileDir) {
-            this.getExternalFilesDir(null)?.path + "/"
-        } else {
-            this.filesDir.path + "/"
-        }
+//        R2DIRECTORY = if (useExternalFileDir) {
+//            this.getExternalFilesDir(null)?.path + "/"
+//        } else {
+//            this.filesDir.path + "/"
+//        }
+
+        R2DIRECTORY = Environment.getDataDirectory().absolutePath
 
         navigatorLauncher = registerForActivityResult(NavigatorContract()) { pubData: NavigatorContract.Output? ->
             if (pubData == null)
@@ -95,21 +98,25 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                 tryOrNull { pubData.file.delete() }
             finish()
         }
-        val remoteUrl = intent.getStringExtra("epub");
-
-        openBook(remoteUrl)
+        val bookPath = intent.getStringExtra("bookPath");
+        val bookId = intent.getLongExtra("bookId", 0L);
+        if(bookPath != null){
+            openBook(bookPath, bookId)
+        }else{
+            finish()
+        }
     }
 
 
-     fun openBook(remoteUrl: String) {
+     fun openBook(filePath: String, bookId: Long) {
 
         launch {
 
-            val remoteAsset: FileAsset? = tryOrNull { URL(remoteUrl).copyToTempFile()?.let { FileAsset(it) } }
+//            val remoteAsset: FileAsset? = tryOrNull { URL(remoteUrl).copyToTempFile()?.let { FileAsset(it) } }
             val mediaType = MediaType.of(fileExtension = "epub") //book.ext.removePrefix(".")
-            val asset = remoteAsset // remote file
-                ?: FileAsset(File(remoteUrl), mediaType = mediaType) // local file
-
+//            val asset = remoteAsset // remote file
+//                ?: FileAsset(File(remoteUrl), mediaType = mediaType) // local file
+            val asset = FileAsset(File(filePath))
             streamer.open(asset, allowUserInteraction = true, sender = this@MainActivity)
                 .onFailure {
                     Timber.d(it)
@@ -126,8 +133,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                                 file = asset.file,
                                 mediaType = mediaType,
                                 publication = it,
-                                bookId = 128457L,
-                                deleteOnResult = remoteAsset != null,
+                                bookId = bookId,
+                                deleteOnResult = false,
                                 baseUrl = Publication.localBaseUrlOf(asset.name, localPort)
                             )
                         )

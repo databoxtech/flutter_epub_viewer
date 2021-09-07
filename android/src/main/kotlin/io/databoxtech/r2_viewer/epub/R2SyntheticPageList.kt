@@ -16,17 +16,18 @@ import org.json.JSONObject
 import org.readium.r2.shared.JSONable
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Publication
+import org.readium.r2.testapp.db.PositionsDatabase
 import java.net.URI
 import java.net.URL
 
 
-class R2SyntheticPageList(private val bookID: Long, private val publicationIdentifier: String) : AsyncTask<Triple<Int, String, List<Link>>, String, MutableList<Position>>() {
+class R2SyntheticPageList(private val positionsDB: PositionsDatabase, private val bookID: Long, private val publicationIdentifier: String) : AsyncTask<Triple<Int, String, List<Link>>, String, MutableList<Position>>() {
 
     private val syntheticPageList = mutableListOf<Position>()
     private var pageNumber: Long = 0
 
     override fun onPreExecute() {
-//        positionsDB.positions.init(bookID)
+        positionsDB.positions.init(bookID)
     }
 
     override fun doInBackground(vararg p0: Triple<Int, String, List<Link>>): MutableList<Position> {
@@ -36,7 +37,7 @@ class R2SyntheticPageList(private val bookID: Long, private val publicationIdent
                 createSyntheticPages(uri.first, uri.second, uri.third[i])
 
                 if (isCancelled) {
-//                    positionsDB.positions.delete(bookID)
+                    positionsDB.positions.delete(bookID)
                 }
             }
         }
@@ -46,7 +47,7 @@ class R2SyntheticPageList(private val bookID: Long, private val publicationIdent
 
     override fun onPostExecute(result: MutableList<Position>?) {
         val jsonPageList = Position.toJSON(publicationIdentifier, result!!)
-//        positionsDB.positions.storeSyntheticPageList(bookID, jsonPageList)
+        positionsDB.positions.storeSyntheticPageList(bookID, jsonPageList)
     }
 
     private fun createSyntheticPages(port: Int, epubName: String, link: Link) {

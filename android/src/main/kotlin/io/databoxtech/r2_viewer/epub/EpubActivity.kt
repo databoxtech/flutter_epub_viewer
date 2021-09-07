@@ -54,8 +54,12 @@ import org.readium.r2.shared.publication.services.isProtected
 import org.readium.r2.shared.publication.services.positions
 import io.databoxtech.r2epub.outline.R2OutlineActivity
 import kotlinx.android.synthetic.main.activity_epub.*
+import kotlinx.android.synthetic.main.popup_window_user_settings.view.*
+import org.readium.r2.navigator.epub.Style
+import org.readium.r2.testapp.db.*
 //import kotlinx.android.synthetic.main.activity_epub.*
 import timber.log.Timber
+import java.util.*
 import kotlin.coroutines.CoroutineContext
 
 
@@ -83,10 +87,10 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
     private var pageEnded = false
 
     // Provide access to the Bookmarks & Positions Databases
-//    private lateinit var bookmarksDB: BookmarksDatabase
-//    private lateinit var booksDB: BooksDatabase
-//    private lateinit var positionsDB: PositionsDatabase
-//    private lateinit var highlightDB: HighligtsDatabase
+    private lateinit var bookmarksDB: BookmarksDatabase
+    private lateinit var booksDB: BooksDatabase
+    private lateinit var positionsDB: PositionsDatabase
+    private lateinit var highlightDB: HighligtsDatabase
 
 
     private lateinit var screenReader: R2ScreenReader
@@ -106,6 +110,8 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
     private var mode: ActionMode? = null
     private var popupWindow: PopupWindow? = null
 
+    private var positionCount = 0
+
     /**
      * Manage activity creation.
      *   - Load data from the database
@@ -119,23 +125,32 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
         }
         setContentView(R.layout.activity_epub)
         super.onCreate(savedInstanceState)
-//        bookmarksDB = BookmarksDatabase(this)
-//        booksDB = BooksDatabase(this)
-//        positionsDB = PositionsDatabase(this)
-//        highlightDB = HighligtsDatabase(this)
+        bookmarksDB = BookmarksDatabase(this)
+        booksDB = BooksDatabase(this)
+        positionsDB = PositionsDatabase(this)
+        highlightDB = HighligtsDatabase(this)
 
 
         navigatorDelegate = this
         bookId = intent.getLongExtra("bookId", -1)
 
+        publication.userSettingsUIPreset[ReadiumCSSName.ref(SCROLL_REF)] = true
+
         launch {
-            val positionCount = publication.positions().size
+            positionCount = publication.positions().size
+            val book =  Book(bookId, Date().time, "$bookId", null);
+            val identifier = booksDB.books.insert(book, false);
+
+            val lct = booksDB.books.currentLocator(bookId)
+            if(lct != null){
+                go(lct, false)
+            }
 
             currentLocator.asLiveData().observe(this@EpubActivity, Observer { locator ->
                 locator ?: return@Observer
 
                 Timber.d("locationDidChange position ${locator.locations.position ?: 0}/${positionCount} $locator")
-//                booksDB.books.saveProgression(locator, bookId)
+                booksDB.books.saveProgression(locator, bookId)
                 runOnUiThread {
                     val prg = Math.round(((locator.locations.position ?: 0)*100 / positionCount).toDouble()).toInt();
                     paginationText.text = "${prg}%";
@@ -148,10 +163,10 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
             })
         }
 
-        launch {
-            delay(100)
-            menuDrm?.isVisible = publication.isProtected
-        }
+//        launch {
+//            delay(100)
+//            menuDrm?.isVisible = publication.isProtected
+//        }
 
         val appearancePref = preferences.getInt(APPEARANCE_REF, 0)
         val backgroundsColors = mutableListOf("#ffffff", "#faf4e8", "#000000")
@@ -161,6 +176,7 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
         toggleActionBar()
 
         resourcePager.offscreenPageLimit = 1
+
 
         titleView.text = publication.metadata.title
 
@@ -330,29 +346,33 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
                 return true
             }
             R.id.screen_reader -> {
-                if (!screenReader.isSpeaking && !screenReader.isPaused && item.title == resources.getString(R.string.epubactivity_read_aloud_start)) {
+                try{
+                    if (!screenReader.isSpeaking && !screenReader.isPaused && item.title == resources.getString(R.string.epubactivity_read_aloud_start)) {
 
-                    //Get user settings speed when opening the screen reader. Get a neutral percentage (corresponding to
-                    //the normal speech speed) if no user settings exist.
-                    val speed = preferences.getInt("reader_TTS_speed",
-                            (2.75 * 3.toDouble() / 11.toDouble() * 100).toInt())
-                    //Convert percentage to a float value between 0.25 and 3.0
-                    val ttsSpeed = 0.25.toFloat() + (speed.toFloat() / 100.toFloat()) * 2.75.toFloat()
+                        //Get user settings speed when opening the screen reader. Get a neutral percentage (corresponding to
+                        //the normal speech speed) if no user settings exist.
+                        val speed = preferences.getInt("reader_TTS_speed",
+                                (2.75 * 3.toDouble() / 11.toDouble() * 100).toInt())
+                        //Convert percentage to a float value between 0.25 and 3.0
+                        val ttsSpeed = 0.25.toFloat() + (speed.toFloat() / 100.toFloat()) * 2.75.toFloat()
 
-                    updateScreenReaderSpeed(ttsSpeed, false)
+                        updateScreenReaderSpeed(ttsSpeed, false)
 
-                    if (screenReader.goTo(resourcePager.currentItem)) {
+                        if (screenReader.goTo(resourcePager.currentItem)) {
 
-                        item.title = resources.getString(R.string.epubactivity_read_aloud_stop)
-                        tts_overlay.visibility = View.VISIBLE
-                        play_pause.setImageResource(android.R.drawable.ic_media_pause)
-                        allowToggleActionBar = false
+                            item.title = resources.getString(R.string.epubactivity_read_aloud_stop)
+                            tts_overlay.visibility = View.VISIBLE
+                            play_pause.setImageResource(android.R.drawable.ic_media_pause)
+                            allowToggleActionBar = false
+                        } else {
+                            Toast.makeText(applicationContext, "No further chapter contains text to read", Toast.LENGTH_LONG).show()
+                        }
+
                     } else {
-                        Toast.makeText(applicationContext, "No further chapter contains text to read", Toast.LENGTH_LONG).show()
+                        dismissScreenReader()
                     }
-
-                } else {
-                    dismissScreenReader()
+                }catch (e: Exception){
+                    Toast.makeText(applicationContext, "Error while loading text to speech engine.", Toast.LENGTH_LONG).show()
                 }
 
                 return true
@@ -363,35 +383,36 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
                 val resourceHref = resource.href
                 val resourceType = resource.type ?: ""
                 val resourceTitle = resource.title ?: ""
-//                val currentPage = positionsDB.positions.getCurrentPage(bookId, resourceHref, currentLocator.value.locations.progression!!)?.let {
-//                    it
-//                }
-                val currentPage = 1
+                val currentPage = positionsDB.positions.getCurrentPage(bookId, resourceHref, currentLocator.value.locations.progression!!)?.let {
+                    it
+                }
+//                val currentPage = 1
+//                val prg = Math.round(((currentPage ?: 0)*100 / positionCount).toDouble()).toInt();
 
-//                val bookmark = Bookmark(
-//                        bookId,
-//                        publicationIdentifier,
-//                        resourceIndex,
-//                        resourceHref,
-//                        resourceType,
-//                        resourceTitle,
-//                        Locator.Locations(progression = currentLocator.value.locations.progression, position = currentPage?.toInt()),
-//                        Locator.Text()
-//                )
-//
-//                bookmarksDB.bookmarks.insert(bookmark)?.let {
-//                    launch {
-//                        currentPage?.let {
-//                            toast("Bookmark added at page $currentPage")
-//                        } ?: run {
-//                            toast("Bookmark added")
-//                        }
-//                    }
-//                } ?: run {
-//                    launch {
-//                        toast("Bookmark already exists")
-//                    }
-//                }
+                val bookmark = Bookmark(
+                        bookId,
+                        publicationIdentifier,
+                        resourceIndex,
+                        resourceHref,
+                        resourceType,
+                        resourceTitle,
+                        Locator.Locations(progression = currentLocator.value.locations.progression, position = currentPage?.toInt()),
+                        Locator.Text()
+                )
+
+                bookmarksDB.bookmarks.insert(bookmark)?.let {
+                    launch {
+                        currentPage?.let {
+                            toast("Bookmark added at page $currentPage")
+                        } ?: run {
+                            toast("Bookmark added")
+                        }
+                    }
+                } ?: run {
+                    launch {
+                        toast("Bookmark already exists")
+                    }
+                }
 
                 return true
             }
@@ -505,9 +526,9 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
         var highlight: org.readium.r2.navigator.epub.Highlight? = null
 
         highlightID?.let { id ->
-//            highlightDB.highlights.list(id).forEach {
-//                highlight = convertHighlight2NavigationHighlight(it)
-//            }
+            highlightDB.highlights.list(id).forEach {
+                highlight = convertHighlight2NavigationHighlight(it)
+            }
         }
 
         val display = windowManager.defaultDisplay
@@ -586,41 +607,41 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
     }
 
     private fun addHighlight(highlight: org.readium.r2.navigator.epub.Highlight) {
-//        val annotation = highlightDB.highlights.list(highlight.id).run {
-//            if (isNotEmpty()) first().annotation
-//            else ""
-//        }
-//
-//        highlightDB.highlights.insert(
-//                convertNavigationHighlight2Highlight(
-//                        highlight,
-//                        annotation,
-//                        highlight.annotationMarkStyle
-//                )
-//        )
+        val annotation = highlightDB.highlights.list(highlight.id).run {
+            if (isNotEmpty()) first().annotation
+            else ""
+        }
+
+        highlightDB.highlights.insert(
+                convertNavigationHighlight2Highlight(
+                        highlight,
+                        annotation,
+                        highlight.annotationMarkStyle
+                )
+        )
     }
 
     private fun deleteHighlight(highlight: org.readium.r2.navigator.epub.Highlight?) {
-//        highlight?.let {
-//            highlightDB.highlights.delete(it.id)
-//            hideHighlightWithID(it.id)
-//            popupWindow?.dismiss()
-//            mode?.finish()
-//        }
+        highlight?.let {
+            highlightDB.highlights.delete(it.id)
+            hideHighlightWithID(it.id)
+            popupWindow?.dismiss()
+            mode?.finish()
+        }
     }
 
     private fun addAnnotation(highlight: org.readium.r2.navigator.epub.Highlight, annotation: String) {
-//        highlightDB.highlights.insert(
-//                convertNavigationHighlight2Highlight(highlight, annotation, "annotation")
-//        )
+        highlightDB.highlights.insert(
+                convertNavigationHighlight2Highlight(highlight, annotation, "annotation")
+        )
     }
 
     private fun drawHighlight() {
-//        val resource = publication.readingOrder[resourcePager.currentItem]
-//        highlightDB.highlights.listAll(bookId, resource.href).forEach {
-//            val highlight = convertHighlight2NavigationHighlight(it)
-//            showHighlight(highlight)
-//        }
+        val resource = publication.readingOrder[resourcePager.currentItem]
+        highlightDB.highlights.listAll(bookId, resource.href).forEach {
+            val highlight = convertHighlight2NavigationHighlight(it)
+            showHighlight(highlight)
+        }
     }
 
     private fun showAnnotationPopup(highlight: org.readium.r2.navigator.epub.Highlight? = null) {
@@ -630,10 +651,10 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
                 .create()
 
         val annotation = highlight?.run {
-//            highlightDB.highlights.list(id).first().run {
-//                if (annotation.isEmpty() and annotationMarkStyle.isEmpty()) ""
-//                else annotation
-//            }
+            highlightDB.highlights.list(id).first().run {
+                if (annotation.isEmpty() and annotationMarkStyle.isEmpty()) ""
+                else annotation
+            }
         }
 
         with(view) {
@@ -680,52 +701,50 @@ class EpubActivity : R2EpubActivity(), CoroutineScope, NavigatorDelegate/*, Visu
     }
 
     override fun highlightAnnotationMarkActivated(id: String) {
-//        val highlight = highlightDB.highlights.list(id.replace("ANNOTATION", "HIGHLIGHT")).first()
-//        showAnnotationPopup(convertHighlight2NavigationHighlight(highlight))
+        val highlight = highlightDB.highlights.list(id.replace("ANNOTATION", "HIGHLIGHT")).first()
+        showAnnotationPopup(convertHighlight2NavigationHighlight(highlight))
     }
 
-//    private fun convertNavigationHighlight2Highlight(highlight: org.readium.r2.navigator.epub.Highlight, annotation: String? = null, annotationMarkStyle: String? = null): Highlight {
-//        val resourceIndex = resourcePager.currentItem.toLong()
-//        val resource = publication.readingOrder[resourcePager.currentItem]
-//        val resourceHref = resource.href
-//        val resourceType = resource.type ?: ""
-//        val resourceTitle = resource.title ?: ""
-//        val currentPage = 1
-////            positionsDB.positions.getCurrentPage(bookId, resourceHref, currentLocator.value.locations.progression!!)?.let {
-////            it
-////        }
-//
-//        val highlightLocations = highlight.locator.locations.copy(
-//            progression = currentLocator.value.locations.progression,
-//            position = currentPage?.toInt()
-//        )
-//        val locationText = highlight.locator.text
-//
-//        return null
-////        return Highlight(
-////                highlight.id,
-////                publicationIdentifier,
-////                "style",
-////                highlight.color,
-////                annotation ?: "",
-////                annotationMarkStyle ?: "",
-////                resourceIndex,
-////                resourceHref,
-////                resourceType,
-////                resourceTitle,
-////                highlightLocations,
-////                locationText,
-////                bookID = bookId
-////        )
-//    }
+    private fun convertNavigationHighlight2Highlight(highlight: org.readium.r2.navigator.epub.Highlight, annotation: String? = null, annotationMarkStyle: String? = null): Highlight {
+        val resourceIndex = resourcePager.currentItem.toLong()
+        val resource = publication.readingOrder[resourcePager.currentItem]
+        val resourceHref = resource.href
+        val resourceType = resource.type ?: ""
+        val resourceTitle = resource.title ?: ""
+        val currentPage = positionsDB.positions.getCurrentPage(bookId, resourceHref, currentLocator.value.locations.progression!!)?.let {
+            it
+        }
 
-//    private fun convertHighlight2NavigationHighlight(highlight: Highlight) = org.readium.r2.navigator.epub.Highlight(
-//            highlight.highlightID,
-//            highlight.locator,
-//            highlight.color,
-//            Style.highlight,
-//            highlight.annotationMarkStyle
-//    )
+        val highlightLocations = highlight.locator.locations.copy(
+            progression = currentLocator.value.locations.progression,
+            position = currentPage?.toInt()
+        )
+        val locationText = highlight.locator.text
+
+        return Highlight(
+                highlight.id,
+                publicationIdentifier,
+                "style",
+                highlight.color,
+                annotation ?: "",
+                annotationMarkStyle ?: "",
+                resourceIndex,
+                resourceHref,
+                resourceType,
+                resourceTitle,
+                highlightLocations,
+                locationText,
+                bookID = bookId
+        )
+    }
+
+    private fun convertHighlight2NavigationHighlight(highlight: Highlight) = org.readium.r2.navigator.epub.Highlight(
+            highlight.highlightID,
+            highlight.locator,
+            highlight.color,
+            Style.highlight,
+            highlight.annotationMarkStyle
+    )
 
     /**
      * Manage what happens when the focus is put back on the EpubActivity.
