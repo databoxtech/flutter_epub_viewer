@@ -1,15 +1,12 @@
 # r2_viewer
 
-A new flutter plugin project.
+Flutter plugin to view epub ebooks using [readium](https://readium.org/) 
+
+Borrowed some ideas/ snippests from flutter plugin [epub_viewer](https://pub.dev/packages/epub_viewer)
+
+FYI: This is work in progress as a generic pluggin. But we are using this already in production. So I beleive it's stable enough.
+
 
 ## Getting Started
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
+Usage is very simple. You just need to call `R2Viewer.openEpub(bookFilePath, bookIid);`
